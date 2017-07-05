@@ -24,10 +24,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 3;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 2;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -265,7 +265,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   // Mean predicted measurement
   VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
-  for (int i=0; i < 2*n_aug_+1; i++) {
+  for (int i=0; i < 2 * n_aug_ + 1; i++) {
     z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
@@ -275,6 +275,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     // Residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
+
+    // Angle normalization
+    while (z_diff(1) > M_PI) z_diff(1) -= 2. * M_PI;
+    while (z_diff(1) <- M_PI) z_diff(1) += 2. * M_PI;
+
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
 
@@ -297,6 +302,10 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
     // Residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
+    // Angle normalization
+    while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
+    while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+
     // State difference
     VectorXd x_diff =  Xsig_pred_.col(i) - x_;
     // Angle normalization
@@ -311,6 +320,10 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   //residual
   VectorXd z_diff_r = z - z_pred;
+
+  // Angle normalization
+  while (z_diff_r(1)> M_PI) z_diff_r(1)-=2.*M_PI;
+  while (z_diff_r(1)<-M_PI) z_diff_r(1)+=2.*M_PI;
 
   // Update state mean and covariance matrix
   x_ += K * z_diff_r;
@@ -363,13 +376,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // Measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z,n_z);
   S.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     // Residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
 
     // Angle normalization
-    while (z_diff(1)> M_PI) z_diff(1) -= 2. * M_PI;
-    while (z_diff(1)<-M_PI) z_diff(1) += 2. * M_PI;
+    while (z_diff(1) > M_PI) z_diff(1) -= 2. * M_PI;
+    while (z_diff(1) <- M_PI) z_diff(1) += 2. * M_PI;
 
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
