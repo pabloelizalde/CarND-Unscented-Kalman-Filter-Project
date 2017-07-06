@@ -72,6 +72,9 @@ UKF::UKF() {
     weights_(i) = weight;
   }
 
+  over_threshold_ = 0;
+  total_measurements_ = 0;
+
 }
 
 UKF::~UKF() {}
@@ -116,15 +119,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   *  Update
   ****************************************************************************/
 
-  if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+  if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_) {
     UpdateRadar(meas_package);
-  } else {
+  } else if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_) {
     UpdateLidar(meas_package);
   }
-
-  // print the output
-  cout << "x_ = " << x_ << endl;
-  cout << "P_ = " << P_ << endl;
 }
 
 /**
@@ -328,6 +327,16 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   // Update state mean and covariance matrix
   x_ += K * z_diff_r;
   P_ -= K * S * K.transpose();
+
+  /***************************************************************************************
+  *  Calculate NIS
+  ****************************************************************************************/
+
+  nis_ = z_diff_r.transpose() * S.inverse() * z_diff_r;
+  if (nis_ > 7.815) {
+    over_threshold_++;
+  }
+  total_measurements_++;
 }
 
 /**
@@ -433,4 +442,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // Update state mean and covariance matrix
   x_ += K * z_diff;
   P_ -= K * S * K.transpose();
+
+  /***************************************************************************************
+  *  Calculate NIS
+  ****************************************************************************************/
+
+  nis_ = z_diff.transpose() * S.inverse() * z_diff;
+  if (nis_ > 7.815) {
+    over_threshold_++;
+  }
+  total_measurements_++;
 }

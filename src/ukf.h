@@ -67,6 +67,14 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///* NIS
+  double nis_;
+
+  ///* Value over threshold
+  int over_threshold_;
+
+  ///* Total measurements
+  int total_measurements_;
 
   /**
    * Constructor

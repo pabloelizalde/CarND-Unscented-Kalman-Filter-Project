@@ -38,7 +38,10 @@ int main()
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
 
-  h.onMessage([&ukf,&tools,&estimations,&ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  ofstream out_file_nis_;
+  out_file_nis_.open("nis_output.txt", ofstream::out);
+
+  h.onMessage([&ukf,&tools,&estimations,&ground_truth, &out_file_nis_](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -127,18 +130,23 @@ int main()
     	  
     	  estimations.push_back(estimate);
 
+        if ((sensor_type.compare("L") == 0 && ukf.use_laser_) ||
+            (sensor_type.compare("R") == 0 && ukf.use_radar_)) {
+          out_file_nis_ << ukf.nis_ << "\n";
+        }
+
     	  VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
 
-          json msgJson;
-          msgJson["estimate_x"] = p_x;
-          msgJson["estimate_y"] = p_y;
-          msgJson["rmse_x"] =  RMSE(0);
-          msgJson["rmse_y"] =  RMSE(1);
-          msgJson["rmse_vx"] = RMSE(2);
-          msgJson["rmse_vy"] = RMSE(3);
-          auto msg = "42[\"estimate_marker\"," + msgJson.dump() + "]";
-          // std::cout << msg << std::endl;
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+        json msgJson;
+        msgJson["estimate_x"] = p_x;
+        msgJson["estimate_y"] = p_y;
+        msgJson["rmse_x"] =  RMSE(0);
+        msgJson["rmse_y"] =  RMSE(1);
+        msgJson["rmse_vx"] = RMSE(2);
+        msgJson["rmse_vy"] = RMSE(3);
+        auto msg = "42[\"estimate_marker\"," + msgJson.dump() + "]";
+        // std::cout << msg << std::endl;
+        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 	  
         }
       } else {
@@ -169,7 +177,9 @@ int main()
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
+  h.onDisconnection([&h, &out_file_nis_](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
+    out_file_nis_.close();
+
     ws.close();
     std::cout << "Disconnected" << std::endl;
   });
@@ -186,90 +196,3 @@ int main()
   }
   h.run();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
