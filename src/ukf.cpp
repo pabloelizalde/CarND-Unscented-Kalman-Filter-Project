@@ -24,10 +24,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 3;
+  std_a_ = 1;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 2;
+  std_yawdd_ = -M_PI_4;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -94,10 +94,18 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
       double cosval = cos(meas_package.raw_measurements_[1]);
       double sinval = sin(meas_package.raw_measurements_[1]);
-      x_ << meas_package.raw_measurements_[0] * cosval, meas_package.raw_measurements_[0] * sinval, 0, 0, 0;
+      x_ << meas_package.raw_measurements_[0] * cosval,
+              meas_package.raw_measurements_[0] * sinval,
+              abs(meas_package.raw_measurements_(2)),
+              0,
+              0;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+      x_ << meas_package.raw_measurements_[0],
+              meas_package.raw_measurements_[1],
+              0,
+              0,
+              0;
     }
 
     time_us_ = meas_package.timestamp_;
